@@ -11,6 +11,6 @@ export default function App() {
     if (params.get("simulador") === "1") setPage("simulator")
   }, [])
 
-  if (page === "simulator") return <Simulator onBack={() => setPage("landing")} />
+  if (page === "simulator") return <Simulator onBackToLanding={() => setPage("landing")} />
   return <LandingPage onStart={() => setPage("simulator")} />
 }
