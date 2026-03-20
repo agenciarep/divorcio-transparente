@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react"
+import ALAN_PHOTO from "../assets/alan_photo.js"
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
@@ -205,9 +206,10 @@ const CSS = `
 .lp-attorney{padding:100px 24px;background:var(--navy)}
 .lp-attorney-inner{max-width:820px;margin:0 auto;display:grid;grid-template-columns:1fr 1.6fr;gap:60px;align-items:center}
 .lp-attorney-visual{display:flex;flex-direction:column;align-items:center;gap:20px}
-.lp-attorney-ring{width:200px;height:200px;border-radius:50%;position:relative;flex-shrink:0}
-.lp-attorney-ring::before{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid transparent;background:linear-gradient(135deg,var(--gold),var(--gold-lt),transparent,var(--gold)) border-box;-webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);-webkit-mask-composite:destination-out;animation:lp-rotateRing 6s linear infinite}
-.lp-attorney-placeholder{width:200px;height:200px;border-radius:50%;background:linear-gradient(145deg,var(--navy-lite),var(--navy-mid));border:2px solid rgba(206,161,79,.2);display:flex;align-items:center;justify-content:center;font-size:72px}
+.lp-attorney-ring{width:200px;height:200px;border-radius:50%;position:relative;flex-shrink:0;overflow:hidden}
+.lp-attorney-ring::before{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid transparent;background:linear-gradient(135deg,var(--gold),var(--gold-lt),transparent,var(--gold)) border-box;-webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);-webkit-mask-composite:destination-out;animation:lp-rotateRing 6s linear infinite;z-index:2;pointer-events:none}
+.lp-attorney-placeholder{width:200px;height:200px;border-radius:50%;background:linear-gradient(145deg,var(--navy-lite),var(--navy-mid));border:2px solid rgba(206,161,79,.2);display:flex;align-items:center;justify-content:center;font-size:72px;overflow:hidden}
+.lp-attorney-photo{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
 .lp-oab-badge{background:var(--gold-dim);border:1px solid rgba(206,161,79,.35);border-radius:50px;padding:8px 18px;font-size:11px;font-weight:700;color:var(--gold-lt);letter-spacing:.1em;text-transform:uppercase}
 .lp-attorney-credentials{font-size:12px;color:var(--gold);letter-spacing:.15em;text-transform:uppercase;font-weight:600;margin-bottom:8px}
 .lp-attorney-title{font-family:'Cormorant Garamond',serif;font-size:clamp(28px,4vw,44px);font-weight:700;color:var(--white);line-height:1.15;margin-bottom:6px}
@@ -278,8 +280,8 @@ const LOGO_SVG = (
 )
 
 const TICKERS = [
-  "Simulação 100% gratuita e segura","Baseado no Código Civil Brasileiro",
-  "Resultado em menos de 3 minutos","Seus dados ficam apenas no seu dispositivo",
+  "Simulação 100% gratuita","Baseado no Código Civil Brasileiro",
+  "Resultado em menos de 3 minutos","Desenvolvida pelo Adv. Alan Mac Dowell",
   "OAB/GO 4573 · Sociedade Individual de Advocacia","Patrimônio protegido com assessoria especializada",
 ]
 
@@ -352,10 +354,9 @@ export default function LandingPage({ onStart }) {
 
   const faqs = [
     ["A simulação tem valor jurídico?","Não. A simulação é uma ferramenta educativa baseada em critérios gerais do Código Civil. Ela não substitui uma consulta jurídica formal. Porém, ela te dá uma base sólida para entender sua posição antes de negociar ou contratar um advogado."],
-    ["Meus dados ficam salvos em algum servidor?","Não. Todos os dados da simulação são processados diretamente no seu navegador e armazenados apenas no seu dispositivo (localStorage). Nenhuma informação patrimonial é enviada para servidores externos sem sua autorização explícita."],
+    ["O que acontece com meus dados após a simulação?","Ao concluir a simulação, seus dados de contato (nome, telefone e e-mail) são recebidos pelo escritório Alan Mac Dowell Velloso para que nossa equipe possa entrar em contato e oferecer o assessoramento jurídico adequado ao seu caso. As informações patrimoniais da simulação ficam armazenadas apenas no seu dispositivo."],
     ["Funciona para qualquer regime de bens?","Sim. O simulador contempla os três regimes mais comuns no Brasil: Comunhão Parcial de Bens (o padrão), Comunhão Universal de Bens e Separação Total de Bens. Cada regime tem regras específicas de cálculo aplicadas automaticamente."],
     ["E se eu tiver empresa? É possível simular?","Sim. O simulador tem uma categoria específica para empresas e cotas societárias. A partilha de negócios envolve regras específicas dependendo do regime e de quando a empresa foi constituída — todos esses fatores são considerados no cálculo."],
-    ["A consulta com o Dr. Alan é paga?","Para quem chega pelo simulador, a primeira consulta de análise do relatório é gratuita. O objetivo é entender seu caso, verificar se os números fazem sentido e apresentar a proposta de honorários caso decida prosseguir com o assessoramento jurídico completo."],
   ]
 
   return (
@@ -389,14 +390,14 @@ export default function LandingPage({ onStart }) {
       {/* HERO */}
       <section className="lp-hero">
         <div className="lp-hero-inner">
-          <div className="lp-badge">⚖️ &nbsp;Ferramenta Jurídica Profissional · Gratuita</div>
+          <div className="lp-badge">⚖️ &nbsp;Ferramenta Jurídica Profissional · Valor Consultivo</div>
           <h1 className="lp-hero-title">
-            Descubra exatamente<br/>
-            <em>quanto você tem direito</em><br/>
-            no seu divórcio
+            Tire todas as suas dúvidas sobre<br/>
+            <em>divórcio, pensão</em><br/>
+            <em>e bens compartilhados</em>
           </h1>
           <p className="lp-hero-sub">
-            Uma simulação precisa de <strong>partilha de bens e pensão alimentícia</strong> baseada no Código Civil — antes de contratar qualquer advogado, entenda o que é realmente seu.
+            Toda a simulação é baseada no <strong>Código Civil Brasileiro</strong> e desenvolvida pelo <strong>Adv. Alan Mac Dowell</strong> — entenda seus direitos antes de tomar qualquer decisão.
           </p>
           <div className="lp-cta-wrap">
             <button className="lp-cta-primary" onClick={onStart}>
@@ -411,7 +412,7 @@ export default function LandingPage({ onStart }) {
             </div>
           </div>
           <div className="lp-hero-trust">
-            {[["🔒","Dados só no seu dispositivo"],["⚖️","Código Civil Brasileiro"],["📄","Relatório em PDF"],["🎯","Patrimônio alto? Somos especialistas"]].map(([icon,txt]) => (
+            {[["⚖️","Código Civil Brasileiro"],["📄","Relatório em PDF"],["🎯","Patrimônio alto? Somos especialistas"],["👨‍⚖️","Desenvolvida pelo Adv. Alan Mac Dowell"]].map(([icon,txt]) => (
               <div key={txt} className="lp-trust-badge"><span className="icon">{icon}</span>{txt}</div>
             ))}
           </div>
@@ -520,16 +521,16 @@ export default function LandingPage({ onStart }) {
         <div className="lp-attorney-inner">
           <div className="lp-attorney-visual">
             <div className="lp-attorney-ring">
-              <div className="lp-attorney-placeholder">👨‍⚖️</div>
+                <img src={ALAN_PHOTO} alt="Dr. Alan Mac Dowell Velloso" className="lp-attorney-photo" />
             </div>
             <div className="lp-oab-badge">OAB/GO 4573</div>
           </div>
           <div>
             <div className="lp-attorney-credentials">Dr. Alan Mac Dowell Velloso</div>
-            <h2 className="lp-attorney-title">Especialista em <em>Direito de Família</em> e Sucessões</h2>
+            <h2 className="lp-attorney-title">Especialista em <em>Direito de Família e Sucessões</em></h2>
             <p className="lp-attorney-bio">Com anos de atuação em casos de alta complexidade patrimonial, o Dr. Alan combina rigor jurídico com tecnologia para garantir que seus clientes nunca cheguem despreparados a uma negociação ou audiência.</p>
             <div className="lp-credential-list">
-              {["Especialista em Direito de Família e Sucessões","Sociedade Individual de Advocacia · Goiânia/GO","Atendimento em casos de patrimônio acima de R$ 200 mil","Consulta inicial 100% gratuita para usuários do simulador"].map(c => (
+              {["Especialista em Direito de Família e Sucessões","Sociedade Individual de Advocacia · Goiânia/GO"].map(c => (
                 <div key={c} className="lp-credential-item">{c}</div>
               ))}
             </div>
@@ -578,7 +579,7 @@ export default function LandingPage({ onStart }) {
         <p className="lp-footer-text">
           <strong style={{color:"#D2D3D5"}}>Alan Mac Dowell Velloso</strong> · Sociedade Individual de Advocacia · OAB/GO 4573<br/>
           Goiânia · Goiás · Brasil<br/>
-          <a href="https://wa.me/556284950116">(62) 8495-0116</a>
+          <a href="https://wa.me/5562996349626">(62) 99634-9626</a>
         </p>
         <hr className="lp-footer-divider"/>
         <p className="lp-footer-text" style={{fontSize:11,color:"#3a5070"}}>
