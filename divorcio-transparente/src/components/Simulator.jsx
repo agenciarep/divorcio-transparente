@@ -1058,10 +1058,15 @@ function AlimonyStep({ state, updateState, onNext, onBack }) {
 
           {/* Sugestões rápidas */}
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: "'DM Sans', sans-serif", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Categorias comuns (clique para pré-preencher)</div>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: "'DM Sans', sans-serif", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Sugestões rápidas (clique para preencher)</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {EXPENSE_SUGGESTIONS.map(s => (
-                <button key={s} onClick={() => setExpName(s.replace(/^[^\s]+ /, ""))} style={{
+                <button key={s} onClick={() => {
+                  const nome = s.replace(/^[^\s]+ /, "");
+                  setExpName(nome);
+                  // foca no campo de valor automaticamente
+                  setTimeout(() => { const el = document.getElementById("exp-val-input"); if (el) el.focus(); }, 50);
+                }} style={{
                   padding: "5px 12px", borderRadius: 20, border: `1px solid ${C.border}`,
                   background: C.white, color: C.textSub, fontSize: 12,
                   cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 500,
@@ -1073,12 +1078,22 @@ function AlimonyStep({ state, updateState, onNext, onBack }) {
 
           {/* Adicionar gasto */}
           <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-            <input placeholder="Categoria (ex: Escola)" value={expName} onChange={e => setExpName(e.target.value)}
-              style={{ flex: 1, ...inputStyle, fontSize: 14 }} />
-            <input placeholder="R$ 0,00" value={expInput}
+            <input
+              placeholder="Digite a despesa — ex: Escola Particular"
+              value={expName}
+              onChange={e => setExpName(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && expName && expVal) addExp(); }}
+              style={{ flex: 1, ...inputStyle, fontSize: 14 }}
+            />
+            <input
+              id="exp-val-input"
+              placeholder="R$ 0,00"
+              value={expInput}
               onChange={e => { setExpInput(e.target.value); setExpVal(parseCur(e.target.value)); }}
-              onBlur={() => setExpInput(fmt(expVal))}
-              style={{ width: 130, ...inputStyle, fontSize: 14 }} />
+              onBlur={() => setExpInput(expVal ? fmt(expVal) : "")}
+              onKeyDown={e => { if (e.key === "Enter" && expName && expVal) addExp(); }}
+              style={{ width: 130, ...inputStyle, fontSize: 14 }}
+            />
             <button onClick={addExp} disabled={!expName || !expVal} style={{
               padding: "0 18px", border: "none", borderRadius: 10,
               background: expName && expVal ? `linear-gradient(135deg,${C.gold},${C.goldLight})` : "#e8eaf0",
@@ -2099,7 +2114,29 @@ function DashboardStep({ state, onReset }) {
       const safeName = form.name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
       doc.save(`Simulacao_${safeName}_${new Date().toLocaleDateString("pt-BR").replace(/\//g, "-")}.pdf`);
 
-      // 2. Small delay then open WhatsApp
+      // 2. Save/update lead in CRM with pdfSent flag
+      try {
+        const LEADS_KEY_LOCAL = "dt-leads-v1";
+        const existing = JSON.parse(localStorage.getItem(LEADS_KEY_LOCAL) || "[]");
+        const idx = existing.findIndex(l => l.phone === form.phone);
+        const score = calcLeadScore(state, totalAssets, totalDebts, suggestedAlimony);
+        const REGIME_LABEL_SAVE = { PARCIAL: "Comunhão Parcial", UNIVERSAL: "Comunhão Universal", SEPARACAO: "Separação Total" };
+        const leadData = {
+          id: idx >= 0 ? existing[idx].id : uid(),
+          name: form.name, phone: form.phone, email: form.email,
+          regime: REGIME_LABEL_SAVE[state.regime] || state.regime,
+          totalAssets, meShare: me, spouseShare: spouse, totalDebts, suggestedAlimony,
+          assets: state.assets, debts: state.debts,
+          score, status: idx >= 0 ? existing[idx].status : "novo",
+          pdfSent: true,
+          createdAt: idx >= 0 ? existing[idx].createdAt : new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        if (idx >= 0) { existing[idx] = leadData; } else { existing.unshift(leadData); }
+        localStorage.setItem(LEADS_KEY_LOCAL, JSON.stringify(existing));
+      } catch(e) { console.error("CRM save error:", e); }
+
+      // 3. Small delay then open WhatsApp
       await new Promise(r => setTimeout(r, 1200));
       const msg = `Olá! Gostaria de falar com o Dr. Alan Mac Dowell Velloso.\n\n` +
         `Meu nome é *${form.name}*\nTelefone: ${form.phone}${form.email ? `\nEmail: ${form.email}` : ""}\n\n` +
@@ -2308,33 +2345,42 @@ export default function Simulator({ onBackToLanding }) {
   const updateState = useCallback((u) => setState(prev => ({ ...prev, ...u })), []);
 
   const onNext = () => {
-    // When advancing FROM LeadCapture (step 5) → save lead before showing dashboard
+    // When advancing FROM LeadCapture (step 5) → save/update lead before showing dashboard
     if (step === 5 && state.leadName && state.leadPhone) {
-      // calc scores to save
       const { me, spouse, totalAssets, totalDebts, suggestedAlimony } = calcDashboardNumbers(state);
       const score = calcLeadScore(state, totalAssets, totalDebts, suggestedAlimony);
       const REGIME_LABEL = { PARCIAL: "Comunhão Parcial", UNIVERSAL: "Comunhão Universal", SEPARACAO: "Separação Total" };
+      // Upsert: se mesmo WhatsApp já existe, preserva id/createdAt/status
+      const existing = (() => { try { return JSON.parse(localStorage.getItem(LEADS_KEY) || "[]"); } catch { return []; } })();
+      const idx = existing.findIndex(l => l.phone === state.leadPhone);
       const lead = {
-        id: uid(),
+        id: idx >= 0 ? existing[idx].id : uid(),
         name: state.leadName, phone: state.leadPhone, email: state.leadEmail,
         regime: REGIME_LABEL[state.regime] || state.regime,
         totalAssets, meShare: me, spouseShare: spouse, totalDebts, suggestedAlimony,
         assets: state.assets, debts: state.debts,
-        score, status: "novo",
-        createdAt: new Date().toISOString(),
+        score,
+        status: idx >= 0 ? existing[idx].status : "novo",
+        createdAt: idx >= 0 ? existing[idx].createdAt : new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
       saveLeadToStorage(lead);
-      // WhatsApp notification to escritório
-      const msg = `🔔 *Novo Lead — Divórcio Transparente*\n\n👤 *${state.leadName}*\n📱 ${state.leadPhone}${state.leadEmail ? `\n📧 ${state.leadEmail}` : ""}\n\n📊 *Resumo*\n• Regime: ${REGIME_LABEL[state.regime]}\n• Patrimônio: ${fmt(totalAssets)}\n• Parte do Cliente: ${fmt(me)}\n• Dívidas: ${fmt(totalDebts)}\n• Pensão Sugerida: ${fmt(suggestedAlimony)}\n• Score: ${score}/100 ${score >= 75 ? "🔥" : score >= 45 ? "⚡" : "❄️"}\n\n_Lead salvo no painel CRM._`;
-      setTimeout(() => window.open(`https://wa.me/5562996349626?text=${encodeURIComponent(msg)}`, "_blank"), 400);
+      // Só notifica WhatsApp se for lead novo (primeiro contato)
+      if (idx < 0) {
+        const msg = `🔔 *Novo Lead — Divórcio Transparente*\n\n👤 *${state.leadName}*\n📱 ${state.leadPhone}${state.leadEmail ? `\n📧 ${state.leadEmail}` : ""}\n\n📊 *Resumo*\n• Regime: ${REGIME_LABEL[state.regime]}\n• Patrimônio: ${fmt(totalAssets)}\n• Parte do Cliente: ${fmt(me)}\n• Dívidas: ${fmt(totalDebts)}\n• Pensão Sugerida: ${fmt(suggestedAlimony)}\n• Score: ${score}/100 ${score >= 75 ? "🔥" : score >= 45 ? "⚡" : "❄️"}\n\n_Lead salvo no painel CRM._`;
+        setTimeout(() => window.open(`https://wa.me/5562996349626?text=${encodeURIComponent(msg)}`, "_blank"), 400);
+      }
     }
     if (step < STEPS.length - 1) { setStep(s => s + 1); window.scrollTo(0, 0); }
   };
 
   const onBack = () => { if (step > 0) { setStep(s => s - 1); window.scrollTo(0, 0); } };
   const onReset = () => {
-    localStorage.removeItem("dt2-state"); localStorage.removeItem("dt2-step");
-    setState(INITIAL); setStep(0);
+    // Only clear simulation state — NEVER touch leads storage
+    localStorage.removeItem("dt2-state");
+    localStorage.removeItem("dt2-step");
+    setState(INITIAL);
+    setStep(0);
   };
 
   if (showCRM) return <CRMPanel onExit={() => setShowCRM(false)} />;
