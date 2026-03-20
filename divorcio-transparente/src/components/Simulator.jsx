@@ -2062,7 +2062,7 @@ async function generateBrandedPDF({ form, state, me, spouse, totalAssets, totalD
   txt("ALAN MAC DOWELL VELLOSO", W / 2, dy + 20, "center");
   setFont(7, "normal"); setTxt(SILVER);
   txt("Sociedade Individual de Advocacia  |  OAB/GO 4573", W / 2, dy + 27, "center");
-  txt("(62) 8495-0116  |  Goiania - GO", W / 2, dy + 33, "center");
+  txt("(62) 99634-9626  |  Goiania - GO", W / 2, dy + 33, "center");
 
   // Page numbers on all pages
   const totalPages = doc.getNumberOfPages();
@@ -2114,7 +2114,7 @@ function DashboardStep({ state, onReset }) {
         `• Necessidades: ${fmt(totalNeeds)}\n` +
         `• Valor Sugerido: ${fmt(suggestedAlimony)}\n\n` +
         `Gostaria de agendar uma consulta.`;
-      window.open(`https://wa.me/556284950116?text=${encodeURIComponent(msg)}`, "_blank");
+      window.open(`https://wa.me/5562996349626?text=${encodeURIComponent(msg)}`, "_blank");
     } catch (e) {
       console.error(e);
       alert("Erro ao gerar PDF. Tente novamente.");
@@ -2326,7 +2326,7 @@ export default function Simulator({ onBackToLanding }) {
       saveLeadToStorage(lead);
       // WhatsApp notification to escritório
       const msg = `🔔 *Novo Lead — Divórcio Transparente*\n\n👤 *${state.leadName}*\n📱 ${state.leadPhone}${state.leadEmail ? `\n📧 ${state.leadEmail}` : ""}\n\n📊 *Resumo*\n• Regime: ${REGIME_LABEL[state.regime]}\n• Patrimônio: ${fmt(totalAssets)}\n• Parte do Cliente: ${fmt(me)}\n• Dívidas: ${fmt(totalDebts)}\n• Pensão Sugerida: ${fmt(suggestedAlimony)}\n• Score: ${score}/100 ${score >= 75 ? "🔥" : score >= 45 ? "⚡" : "❄️"}\n\n_Lead salvo no painel CRM._`;
-      setTimeout(() => window.open(`https://wa.me/556284950116?text=${encodeURIComponent(msg)}`, "_blank"), 400);
+      setTimeout(() => window.open(`https://wa.me/5562996349626?text=${encodeURIComponent(msg)}`, "_blank"), 400);
     }
     if (step < STEPS.length - 1) { setStep(s => s + 1); window.scrollTo(0, 0); }
   };
