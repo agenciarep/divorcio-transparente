@@ -39,6 +39,10 @@ const FontLoader = () => (
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: #f0f2f5; }
     ::-webkit-scrollbar-thumb { background: #CEA14F; border-radius: 4px; }
+
+    @media (max-width: 480px) {
+      input, select { font-size: 16px !important; }
+    }
   `}</style>
 );
 
