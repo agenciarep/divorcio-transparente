@@ -253,16 +253,39 @@ const CSS = `
   .lp-header{padding:14px 20px}
   .lp-numbers-inner{grid-template-columns:repeat(2,1fr)}
   .lp-steps-grid,.lp-profiles-grid,.lp-testi-grid{grid-template-columns:1fr}
-  .lp-attorney-inner{grid-template-columns:1fr;text-align:center}
+  .lp-attorney-inner{grid-template-columns:1fr;text-align:center;gap:32px}
   .lp-attorney-visual{margin:0 auto}
+  .lp-attorney-ring{width:160px;height:160px}
+  .lp-attorney-placeholder{width:160px;height:160px}
   .lp-credential-item{justify-content:center}
   .lp-hero{padding:100px 20px 60px}
   .lp-notif-container{display:none}
-  .lp-cta-note{gap:10px}
+  .lp-cta-note{gap:10px;font-size:11px}
+  .lp-hero-trust{gap:8px}
+  .lp-trust-badge{font-size:11px;padding:8px 12px}
+  .lp-comparison{padding:60px 20px}
+  .lp-bar-label{flex-direction:column;gap:2px}
+  .lp-bar-label .name{font-size:12px}
+  .lp-bar-label .val{font-size:13px}
+  .lp-callout-box{padding:20px;gap:14px;flex-direction:column}
+  .lp-callout-icon{font-size:22px}
+  .lp-attorney{padding:60px 20px}
+  .lp-urgency{padding:60px 20px}
+  .lp-faq{padding:60px 20px}
+  .lp-final-cta{padding:80px 20px}
+  .lp-how{padding:60px 20px}
+  .lp-forwhom{padding:60px 20px}
+  .lp-testimonials{padding:60px 20px}
+  .lp-section-title{margin-bottom:36px}
 }
 @media(max-width:480px){
   .lp-header-cta{display:none}
   .lp-numbers-inner{grid-template-columns:1fr 1fr}
+  .lp-hero-title{font-size:32px}
+  .lp-cta-primary{padding:15px 24px;font-size:14px}
+  .lp-attorney-ring{width:140px;height:140px}
+  .lp-attorney-placeholder{width:140px;height:140px}
+  .lp-bar-label .name{font-size:11px}
 }
 `
 
