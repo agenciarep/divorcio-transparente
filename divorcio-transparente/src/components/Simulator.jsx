@@ -2293,7 +2293,7 @@ const INITIAL = {
 const STEPS = [WelcomeStep, RegimeStep, AssetsStep, DebtsStep, AlimonyStep, LeadCaptureStep, DashboardStep];
 const STEP_LABELS_NAV = ["Início", "Regime", "Bens", "Dívidas", "Pensão", "Seus Dados", "Resultado"];
 
-export default function Simulator({ onBack }) {
+export default function Simulator({ onBackToLanding }) {
   const [state, setState] = useState(() => {
     try { const s = localStorage.getItem("dt2-state"); return s ? JSON.parse(s) : INITIAL; } catch { return INITIAL; }
   });
