@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { db } from "../firebase.js";
+import { collection, doc, setDoc, getDocs, updateDoc, query, orderBy } from "firebase/firestore";
 
 /* ─── Google Fonts ─────────────────────────────────────────────────────────── */
 const FontLoader = () => (
@@ -1256,7 +1258,9 @@ function calcDashboardNumbers(state) {
 /* ── Lead Storage (localStorage) ────────────────────────────────────────────── */
 const LEADS_KEY = "dt-leads-v1";
 
-function saveLeadToStorage(lead) {
+// Salva no Firebase (nuvem) + localStorage (fallback offline)
+async function saveLeadToStorage(lead) {
+  // 1. Sempre salva no localStorage como backup
   try {
     const existing = JSON.parse(localStorage.getItem(LEADS_KEY) || "[]");
     const idx = existing.findIndex(l => l.phone === lead.phone);
@@ -1266,8 +1270,16 @@ function saveLeadToStorage(lead) {
       existing.unshift(lead);
     }
     localStorage.setItem(LEADS_KEY, JSON.stringify(existing));
-    return true;
-  } catch { return false; }
+  } catch(e) { console.error("localStorage error:", e); }
+
+  // 2. Salva no Firebase usando o telefone como chave única (upsert)
+  try {
+    const phoneKey = lead.phone.replace(/\D/g, "");
+    await setDoc(doc(db, "leads", phoneKey), {
+      ...lead,
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+  } catch(e) { console.error("Firebase save error:", e); }
 }
 
 function calcLeadScore(state, totalAssets, totalDebts, suggestedAlimony) {
@@ -1414,26 +1426,50 @@ function CRMPanel({ onExit }) {
     else setAuthErr("Usuário ou senha incorretos.");
   };
 
-  const loadLeads = () => {
+  const loadLeads = async () => {
+    try {
+      // Carrega do Firebase primeiro
+      const q = query(collection(db, "leads"), orderBy("createdAt", "desc"));
+      const snap = await getDocs(q);
+      const firebaseLeads = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+      if (firebaseLeads.length > 0) {
+        setLeads(firebaseLeads);
+        // Sincroniza localStorage com Firebase
+        localStorage.setItem(LEADS_KEY, JSON.stringify(firebaseLeads));
+        return;
+      }
+    } catch(e) { console.error("Firebase load error:", e); }
+    // Fallback: carrega do localStorage se Firebase falhar
     try {
       const raw = JSON.parse(localStorage.getItem(LEADS_KEY) || "[]");
       setLeads(raw);
     } catch { setLeads([]); }
   };
 
-  const updateStatus = (id, status) => {
+  const updateStatus = async (id, status) => {
     const updated = leads.map(l => l.id === id ? { ...l, status } : l);
     setLeads(updated);
     localStorage.setItem(LEADS_KEY, JSON.stringify(updated));
     if (selected?.id === id) setSelected({ ...selected, status });
+    // Atualiza no Firebase
+    try {
+      const phoneKey = id.replace(/\D/g, "");
+      await updateDoc(doc(db, "leads", phoneKey), { status, updatedAt: new Date().toISOString() });
+    } catch(e) { console.error("Firebase update error:", e); }
   };
 
-  const deleteLead = (id) => {
+  const deleteLead = async (id) => {
     if (!window.confirm("Remover este lead?")) return;
     const updated = leads.filter(l => l.id !== id);
     setLeads(updated);
     localStorage.setItem(LEADS_KEY, JSON.stringify(updated));
     setSelected(null);
+    // Remove do Firebase
+    try {
+      const { deleteDoc } = await import("firebase/firestore");
+      const phoneKey = id.replace(/\D/g, "");
+      await deleteDoc(doc(db, "leads", phoneKey));
+    } catch(e) { console.error("Firebase delete error:", e); }
   };
 
   const exportCSV = () => {
@@ -2118,13 +2154,12 @@ function DashboardStep({ state, onReset }) {
       const safeName = form.name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
       doc.save(`Simulacao_${safeName}_${new Date().toLocaleDateString("pt-BR").replace(/\//g, "-")}.pdf`);
 
-      // 2. Save/update lead in CRM with pdfSent flag
+      // 2. Save/update lead in Firebase + localStorage
       try {
-        const LEADS_KEY_LOCAL = "dt-leads-v1";
-        const existing = JSON.parse(localStorage.getItem(LEADS_KEY_LOCAL) || "[]");
-        const idx = existing.findIndex(l => l.phone === form.phone);
         const score = calcLeadScore(state, totalAssets, totalDebts, suggestedAlimony);
         const REGIME_LABEL_SAVE = { PARCIAL: "Comunhão Parcial", UNIVERSAL: "Comunhão Universal", SEPARACAO: "Separação Total" };
+        const existing = JSON.parse(localStorage.getItem(LEADS_KEY) || "[]");
+        const idx = existing.findIndex(l => l.phone === form.phone);
         const leadData = {
           id: idx >= 0 ? existing[idx].id : uid(),
           name: form.name, phone: form.phone, email: form.email,
@@ -2136,8 +2171,7 @@ function DashboardStep({ state, onReset }) {
           createdAt: idx >= 0 ? existing[idx].createdAt : new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
-        if (idx >= 0) { existing[idx] = leadData; } else { existing.unshift(leadData); }
-        localStorage.setItem(LEADS_KEY_LOCAL, JSON.stringify(existing));
+        await saveLeadToStorage(leadData);
       } catch(e) { console.error("CRM save error:", e); }
 
       // 3. Small delay then open WhatsApp
